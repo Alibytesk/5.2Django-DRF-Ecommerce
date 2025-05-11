@@ -1,0 +1,5 @@
+# Ignore templates and static files from language statistics
+**/templates/** linguist-vendored
+**/static/** linguist-vendored
+**/assets/** linguist-vendored
+**/node_modules/** linguist-vendored
