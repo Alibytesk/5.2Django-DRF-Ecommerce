@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title> {% block title %} {% endblock %} </title>
+    {% include 'includes/head_referencess.html' %}
+</head>
+
+<body>
+    <!-- Topbar Start -->
+    {% include 'includes/topbar.html' %}
+    <!-- Topbar End -->
+
+
+    <!-- Navbar Start -->
+    {% include 'includes/navbar.html' %}
+    <!-- Navbar End -->
+{% block content %}
+
+{% endblock %}
+
+    <!-- Footer Start -->
+    {% include 'includes/footer.html' %}
+    <!-- Footer End -->
+
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-primary back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+
+    <!-- JavaScript Libraries -->
+    {% include 'includes/footer_referencess.html' %}
+</body>
+
+</html>

@@ -5,6 +5,7 @@ from config.settings import DEBUG, MEDIA_URL, MEDIA_ROOT
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('home.urls'))
 ]
 
 if DEBUG:
