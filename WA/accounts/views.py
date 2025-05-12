@@ -3,13 +3,14 @@ from django.shortcuts import render, redirect
 from django.views.generic.base import View
 from django.db.models import Q
 from django.http import HttpResponse
+from django.urls import reverse
 #apps
+from .mixins import AnonymousMixin
 from .forms import *
 
 import requests
 
-
-class LoginView(View):
+class LoginView(AnonymousMixin, View):
 
     def post(self, request):
         form = LoginForm(data=request.POST)
@@ -41,17 +42,80 @@ class LoginView(View):
 
     def get(self, request):
         form = LoginForm()
-        if request.COOKIES.get('Authorization'):
-            response = requests.post(
-                url='http://127.0.0.1:8001/accounts/api/check_authenticate/',
-                headers={
-                    'Authorization': f'{request.COOKIES.get('Authorization')}'
-                }
-            )
-            if response.status_code == 200:
-                return redirect('/')
         return render(request, 'accounts/authentication.html', context={'form':form})
     
+class RegisterView(AnonymousMixin, View):
+
+    def post(self, request):
+        form = RegisterForm(data=request.POST)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+            response = requests.post(
+                url='http://127.0.0.1:8001/accounts/api/register/',
+                json={'phone': cleaned_data.get('phone')}
+            )
+            if response.status_code == 200:
+                token = response.json()['token']
+                request.session['phone'] = cleaned_data['phone']
+                return redirect(reverse('accounts:create-account') + f'?token={token}')
+            elif response.status_code == 400:
+                error = response.json()['response']
+                form.add_error('phone', error)
+        return render(request, 'accounts/authentication.html', context={'form':form})
+
+    def get(self, request):
+        form = RegisterForm()
+        return render(request, 'accounts/authentication.html', context={'form':form})
+
+class CreateAccountView(AnonymousMixin, View):
+
+    def get_access(self):
+        if self.request.session['phone']:
+            response = requests.post(
+            url='http://127.0.0.1:8001/accounts/api/check_otp_access/',
+            json={
+                'token': self.request.GET.get('token'),
+                'phone': self.request.session.get('phone'),
+            }
+            )
+            is_true = response.json()['is_true']
+            if response.status_code == 200 and is_true:
+                return True
+            elif response.status_code == 406 and not is_true:
+                return False
+        
+    def post(self, request):
+        if self.get_access():
+            form = OtpcheckForm(data=request.POST)
+            if form.is_valid():
+                cleaned_data = form.cleaned_data
+                response = requests.post(
+                    url='http://127.0.0.1:8001/accounts/api/create-account/',
+                    json={
+                        'code': cleaned_data['code'],
+                        'username': cleaned_data['username'],
+                        'email': cleaned_data['email'],
+                        'password1': cleaned_data['password1'],
+                        'password2': cleaned_data['password2'],
+                        'phone': request.session['phone'],
+                        'token': request.GET.get('token'),
+                    }
+                )
+                if response.status_code == 200:
+                    if request.session.get('phone'):
+                        del request.session['phone']
+                    return redirect('accounts:login')
+                elif response.status_code == 406:
+                    error = response.json()['response']
+                    form.add_error('code', error)
+            return render(request, 'accounts/authentication.html', context={'form':form})
+
+    def get(self, request):
+        if self.get_access():
+            form = OtpcheckForm()
+            return render(request, 'accounts/authentication.html', context={'form':form})
+        else:
+            return redirect('accounts:register')
 
 
 def delete_cookies_jwt_view(request):
