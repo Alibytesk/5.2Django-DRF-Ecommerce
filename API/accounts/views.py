@@ -9,7 +9,11 @@ from rest_framework import status
 #django
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
+from django.db.models import Q
 #apps
+from .models import *
+
+
 
 class LoginAPIView(APIView):
 
@@ -21,4 +25,14 @@ class LoginAPIView(APIView):
             return Response(data=dict({
                 'jwt_token': str(jwt_token)
             }), status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            username = data.get('username')
+            if User.objects.filter(
+                Q(username__exact=username) |
+                Q(phone__exact=username)    |
+                Q(email__exact=username)
+            ).exists():
+                return Response(data={'response': 'incorrect password'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={'response': 'please enter a valid username, phone or email'},
+                            status=status.HTTP_400_BAD_REQUEST)

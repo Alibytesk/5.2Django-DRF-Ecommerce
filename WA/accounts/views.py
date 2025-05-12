@@ -30,7 +30,11 @@ class LoginView(View):
                     max_age=3600,
                 )
                 return red
-            form.add_error('username', 'invalid username or password')    
+            elif response.status_code == 400:
+                response = response.json()['response']
+                form.add_error('username', response)
+            else:
+                form.add_error('username', 'invalid username or password')    
         return render(request, 'accounts/authentication.html', context={'form':form})
 
 
