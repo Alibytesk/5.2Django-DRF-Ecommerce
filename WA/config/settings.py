@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django_render_partial',
     #apps
     'home.apps.HomeConfig',
+    'accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [
