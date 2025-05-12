@@ -15,6 +15,7 @@ from .models import *
 
 
 
+
 class LoginAPIView(APIView):
 
     def post(self, request):
@@ -34,5 +35,13 @@ class LoginAPIView(APIView):
             ).exists():
                 return Response(data={'response': 'incorrect password'},
                                 status=status.HTTP_400_BAD_REQUEST)
-            return Response(data={'response': 'please enter a valid username, phone or email'},
+            else:
+                return Response(data={'response': 'please enter a valid username, phone or email'},
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+class AuthenticateCheckAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        return Response(data={'response':'is_Authenticated'}, status=status.HTTP_200_OK)

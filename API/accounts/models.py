@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from accounts.manager import *
+from datetime import timedelta
 
 class User(AbstractBaseUser):
     USERNAME_FIELD = 'phone'
@@ -38,3 +40,12 @@ class User(AbstractBaseUser):
     def __str__(self):
         return self.phone
 
+class Otp(models.Model):
+    phone = models.CharField(max_length=11)
+    token = models.CharField(max_length=255)
+    code = models.SmallIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @staticmethod
+    def otp_clean():
+        Otp.objects.filter(created_at__lt=(timezone.now() - timedelta(minutes=5))).delete()
