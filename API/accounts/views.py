@@ -102,9 +102,7 @@ class CreateAccountAPIView(APIView):
                     _response = {'response':'password does not match'}
             else:
                 _review_objects = review_objects.first()
-                if _review_objects.email == data['email'] and _review_objects.username == data['username']:
-                    _response = {'response': 'this email and username are already exists'}
-                elif _review_objects.email == data['email']:
+                if _review_objects.email == data['email']:
                     _response = {'response': 'this email is already exists'}
                 elif _review_objects.username == data['username']:
                     _response = {'response':'this username is already exists'}

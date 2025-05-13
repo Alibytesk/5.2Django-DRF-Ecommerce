@@ -180,38 +180,38 @@ class CreateAccountViewTests(TestCase):
 
 
 
-def test_password_validation(self):
-    test_cases = [
-        (
-            {'password1': 'JkRolling12345'},
-            'password must contain at least one special character',
-        ),
-        (
-            {'password1': 'JkRolling!@#$%'},
-            'password must contain at least one number',
-        ),
-        (
-            {'password1': 'jkrolling12345%$#@!'},
-            'password must contain at least one uppercase character',
-        ),
-        (
-            {'password1': 'JKROLLING12345!@#$%'},
-            'password must contain at least one lowercase character',
-        ),
-        (
-            {'password1': 'Jk1!'},
-            'password must be at least 8 character',
-        ),
-    ]
+    def test_password_validation(self):
+        test_cases = [
+            (
+                {'password1': 'JkRolling12345'},
+                'password must contain at least one special character',
+            ),
+            (
+                {'password1': 'JkRolling!@#$%'},
+                'password must contain at least one number',
+            ),
+            (
+                {'password1': 'jkrolling12345%$#@!'},
+                'password must contain at least one uppercase character',
+            ),
+            (
+                {'password1': 'JKROLLING12345!@#$%'},
+                'password must contain at least one lowercase character',
+            ),
+            (
+                {'password1': 'Jk1!'},
+                'password must be at least 8 character',
+            ),
+        ]
 
-    for override_data, expected_error in test_cases:
-        form_data = {
-            **self.data,
-            **override_data,
-            'password2': override_data['password1'],
-        }
-        form = OtpcheckForm(data=form_data)
-        with self.subTest(password=override_data['password1']):
-            self.assertFalse(form.is_valid())
-            self.assertIn(expected_error, str(form.errors))
+        for override_data, expected_error in test_cases:
+            form_data = {
+                **self.data,
+                **override_data,
+                'password2': override_data['password1'],
+            }
+            form = OtpcheckForm(data=form_data)
+            with self.subTest(password=override_data['password1']):
+                self.assertFalse(form.is_valid())
+                self.assertIn(expected_error, str(form.errors))
 
