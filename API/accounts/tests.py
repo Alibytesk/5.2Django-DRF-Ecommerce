@@ -43,3 +43,11 @@ class LoginAPIViewTest(APITestCase):
         self.assertEqual(response.data['response'], 'please enter a valid username, phone or email')
 
 
+class RegisterAPIView(APITestCase):
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            phone='09123456789',
+        )
+        self.url = reverse('accounts:login')
+
