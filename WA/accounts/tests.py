@@ -1,8 +1,11 @@
 # accounts/tests.py
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.contrib.messages import get_messages
 from unittest.mock import patch, Mock
 from accounts.forms import OtpcheckForm
+from .decorators_tests import *
+
 
 class LoginViewTests(TestCase):
     def setUp(self):
@@ -215,3 +218,44 @@ class CreateAccountViewTests(TestCase):
                 self.assertFalse(form.is_valid())
                 self.assertIn(expected_error, str(form.errors))
 
+
+class ChangePasswordViewTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.client.cookies['Authorization'] = 'Bearer faketokenxxx'
+        self.url = reverse('accounts:change-password')
+        self.redirect_url = reverse('accounts:login')
+        self.data = dict({
+            'current_password': 'Django12345!@#$%',
+            'password1': 'Django12345%$#@!',
+            'password2': 'Django12345%$#@!',
+        })
+    
+    @mock_post
+    def test_change_password_success(self):
+        response = self.client.post(self.url ,self.data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, self.redirect_url)
+
+    @mock_post
+    def test_change_password_same_current_password(self):
+        data = dict({
+            'current_password': 'Django12345!@#$%',
+            'password1': 'Django12345!@#$%',
+            'password2': 'Django12345!@#$%',
+        })
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'new password can not be your current password')
+    
+    @mock_post
+    def test_change_password_wrong_current_password(self):
+        data = dict({
+            'current_password': 'wrongpassword',
+            'password1': 'Django12345!@#$%',
+            'password2': 'Django12345!@#$%',
+        })
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'your current password is wrong')
