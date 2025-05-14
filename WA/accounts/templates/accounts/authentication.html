@@ -7,6 +7,8 @@
 {{request.resolver_match.url_name|title}}
 {% elif request.resolver_match.url_name == 'create-account' %}
 Create Account
+{% elif request.resolver_match.url_name == 'change-password' %}
+Change Password
 {% endif %}
 {% endblock %}
 {% block content %}
@@ -19,6 +21,8 @@ Create Account
             {{request.resolver_match.url_name|title}}
             {% elif request.resolver_match.url_name == 'create-account' %}
             Create Account
+            {% elif request.resolver_match.url_name == 'change-password' %}
+            Change Password
             {% endif %}
         </span></h2>
         <div class=" px-xl-5">
@@ -45,6 +49,8 @@ Create Account
                                 {{request.resolver_match.url_name|title}}
                                 {% elif request.resolver_match.url_name == 'create-account' %}
                                 Create Account
+                                {% elif request.resolver_match.url_name == 'change-password' %}
+                                change
                                 {% endif %}
                             </button>
                         </div>

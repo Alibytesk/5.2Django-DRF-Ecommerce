@@ -51,3 +51,29 @@ class OtpcheckForm(forms.Form):
 
     def clean_password1(self):
         return PasswordValidation.password_validator(self.cleaned_data['password1'])
+
+
+class ChangePasswordForm(forms.Form):
+
+    current_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'your current password',
+            'class': 'form-control',
+        })
+    )
+    password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'new password',
+            'class': 'form-control',
+        })
+    )
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'confirmation password',
+            'class': 'form-control',
+        })
+    )
+
+    def clean_password1(self):
+        password1 = self.cleaned_data.get('password1')
+        return PasswordValidation.password_validator(password1=password1)

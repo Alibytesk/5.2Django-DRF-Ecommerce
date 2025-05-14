@@ -14,3 +14,21 @@ class AnonymousMixin:
             if response.status_code == 200:
                 return redirect('/')
         return super().dispatch(request, *args, **kwargs)
+    
+
+class LoginRequiredMixin:
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not request.COOKIES.get('Authorization'):
+            return redirect('accounts:login')
+        else:
+            response = requests.post(
+                url='http://127.0.0.1:8001/accounts/api/check_authenticate/',
+                headers= dict({
+                    'Authorization': request.COOKIES.get('Authorization'),
+                }),
+            )
+            if response.json()['response'] == 'is_Authenticated' and response.status_code == 200:
+                return super().dispatch(request, *args, **kwargs)
+            else:
+                return redirect('accounts:login')

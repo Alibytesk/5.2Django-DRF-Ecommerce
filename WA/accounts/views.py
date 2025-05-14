@@ -4,8 +4,9 @@ from django.views.generic.base import View
 from django.db.models import Q
 from django.http import HttpResponse
 from django.urls import reverse
+from django.contrib import messages
 #apps
-from .mixins import AnonymousMixin
+from .mixins import AnonymousMixin, LoginRequiredMixin
 from .forms import *
 
 import requests
@@ -122,3 +123,39 @@ def delete_cookies_jwt_view(request):
     red = redirect('/')
     red.delete_cookie('Authorization')
     return red
+
+
+class ChangePasswordView(LoginRequiredMixin, View):
+
+    def post(self, request):
+        form = ChangePasswordForm(data=request.POST)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+            if cleaned_data['password1'] == cleaned_data['password2']:
+                response = requests.post(
+                    url='http://127.0.0.1:8001/accounts/api/change-password/',
+                    headers=dict({
+                        'Authorization': request.COOKIES.get('Authorization'),
+                    }),
+                    json=dict({
+                        'current_password': cleaned_data['current_password'],
+                        'password1': cleaned_data['password1'],
+                        'password2': cleaned_data['password2'],
+                    })
+                )
+                if response.json()['response'] == 'password successfully updated' and response.status_code == 200:
+                    messages.success(request, 'password successfully updated')
+                    red = redirect('accounts:login')
+                    red.delete_cookie('Authorization')
+                    return red
+                elif response.status_code == 406:
+                    form.add_error('current_password', response.json()['response'])
+            else:
+                form.add_error('password2', 'confirmation password do not match')
+        return render(request, 'accounts/authentication.html', context={'form':form})
+
+    def get(self, request):
+        form = ChangePasswordForm()
+        return render(request, 'accounts/authentication.html', context={
+            'form': form
+        })

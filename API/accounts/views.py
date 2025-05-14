@@ -1,21 +1,10 @@
-#restJWT
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import AccessToken
-#restApi
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework import status
-#django
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate
-from django.db.models import Q
-from django.utils.crypto import get_random_string
-#apps
-from .models import *
+from .imports import *
 
-from random import randint as rnd
-
+class AuthenticateCheckAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        return Response(data={'response':'is_Authenticated'}, status=status.HTTP_200_OK)
 
 class LoginAPIView(APIView):
 
@@ -112,8 +101,22 @@ class CreateAccountAPIView(APIView):
             return Response(data=dict(_response), status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
-class AuthenticateCheckAPIView(APIView):
+class ChangePasswordAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        return Response(data={'response':'is_Authenticated'}, status=status.HTTP_200_OK)
+        data = request.data
+        user = User.objects.get(phone=request.user)
+        if user.check_password(data['current_password']):
+            if not data['current_password'] == data['password1']:
+                user.set_password(data['password1'])
+                user.save()
+                return Response(data=dict({
+                    'response': 'password successfully updated'
+                }), status=status.HTTP_200_OK)
+            else:
+                _response = {'response': 'new password can not be your current password'}
+        else:
+            _response = {'response': 'your current password is wrong'}
+        return Response(data=_response, status=status.HTTP_406_NOT_ACCEPTABLE)
