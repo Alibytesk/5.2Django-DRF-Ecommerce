@@ -4,6 +4,8 @@ from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from .models import Otp
 from time import time
+from .decorators_test import *
+from functools import cache
 
 
 class LoginAPIViewTest(APITestCase):
@@ -158,3 +160,45 @@ class CreateAccountAPIViewTest(APITestCase):
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
         self.assertIn('this email is already exists', response.data['response'])
+
+
+class ChangePasswordAPIViewTest(APITestCase):
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            phone='09000000000',
+            username='Gorge Marting',
+            email='martin@gmail.com',
+            password='GMarting12345!@#$%',
+        )
+        self.request_data = dict({
+            'current_password': 'GMarting12345!@#$%',
+            'password1': 'Django12345!@#$%',
+            'password2': 'Django12345!@#$%',
+        })
+        self.url = reverse('accounts:change-password')
+
+    @cache
+    @jwt_token
+    def test_change_password_success(self):
+        response = self.client.post(self.url, self.request_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['response'], 'password successfully updated')
+
+    @cache
+    @jwt_token
+    def test_change_password_wrong_current_password(self):
+        data = self.request_data.copy()
+        data['current_password'] = 'wrong-password'
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+        self.assertEqual(response.data['response'], 'your current password is wrong')
+
+    @cache
+    @jwt_token
+    def test_change_password_same_current_password(self):
+        data = self.request_data
+        data['password1'] = data['password2'] = data['current_password']
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+        self.assertEqual(response.data['response'], 'new password can not be your current password')

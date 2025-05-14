@@ -16,7 +16,6 @@ def mock_post(main: FunctionType) -> FunctionType:
             elif 'change-password' in url:
                 current_password = json.get('current_password')
                 password1 = json.get('password1')
-                password2 = json.get('password2')
                 if current_password != 'Django12345!@#$%':
                     mock_response.status_code = 406
                     mock_response.json.return_value = {
