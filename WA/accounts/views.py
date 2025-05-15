@@ -1,17 +1,4 @@
-#django
-from django.shortcuts import render, redirect
-from django.views.generic.base import View
-from django.db.models import Q
-from django.core.cache import cache
-from django.http import HttpResponse
-from django.urls import reverse
-from django.contrib import messages
-#apps
-from .mixins import AnonymousMixin, LoginRequiredMixin
-from .forms import *
-
-import hashlib
-import requests
+from .imports import *
 
 class LoginView(AnonymousMixin, View):
 
@@ -137,7 +124,7 @@ class ChangePasswordView(LoginRequiredMixin, View):
                 response = requests.post(
                     url='http://127.0.0.1:8001/accounts/api/change-password/',
                     headers=dict({
-                        'Authorization': request.COOKIES.get('Authorization'),
+                        'Authorization': str(request.COOKIES.get('Authorization')),
                     }),
                     json=dict({
                         'current_password': cleaned_data['current_password'],
@@ -147,6 +134,9 @@ class ChangePasswordView(LoginRequiredMixin, View):
                 )
                 if response.json()['response'] == 'password successfully updated' and response.status_code == 200:
                     messages.success(request, 'password successfully updated')
+                    token = request.COOKIES.get('Authorization')
+                    token_key = f'user_auth_token_{hashlib.md5(token.encode()).hexdigest()}'
+                    cache.delete(token_key)
                     red = redirect('accounts:login')
                     red.delete_cookie('Authorization')
                     return red
@@ -182,3 +172,85 @@ class LogoutView(View):
     def get(self, request):
         return self.logout_user(request)
     
+
+class GenerateEmailVerifyCodeView(LoginRequiredMixin, View):
+
+    def get(self, request):
+        response = requests.get(
+            url='http://127.0.0.1:8001/accounts/api/generate-email-code/',
+            headers=dict({
+                'Authorization': str(request.COOKIES.get('Authorization')),
+            }),
+        )
+        print('check1'*100)
+        if response.status_code == 200:
+            EmailMessage(
+                subject='Email Verification',
+                body=render_to_string(
+                    template_name='accounts/email_code.html',
+                    context={
+                        'username': response.json()['username'],
+                        'code': response.json()['code'],
+                    }
+                ),
+                to=[response.json()['email']],  
+            ).send()
+            messages.success(request, 'email verification has been sent to your email address')
+            return redirect('accounts:emailverification')
+        elif response.status_code == 406:
+            return redirect('/')
+    
+
+class EmailVerificationView(LoginRequiredMixin, View):
+
+    def post(self, request):
+        form = EmailVerificationForm(data=request.POST)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+            response = requests.post(
+                url='http://127.0.0.1:8001/accounts/api/emailverification/',
+                json={'code': cleaned_data['code']},
+                headers={
+                    'Authorization': str(request.COOKIES.get('Authorization'))
+                },
+            )
+            if response.json()['response'] == 'successfully verified' and response.status_code == 200:
+                messages.success(request, 'successfully verified email address')
+                return redirect('home:home')
+            elif response.json()['response'] == 'invalid_code' and response.status_code == 406:
+                counter = int(request.session.get('counter', 0))
+                counter += 1
+                request.session['counter'] = counter
+                if counter >= 3:
+                    request.session['3timewrongverifycode'] = 'true'
+                    del request.session['counter']
+                    return redirect(reverse('accounts:emailverify'))
+                form.add_error('code', response.json()['response'])
+            else:
+                return redirect('/')
+        return render(request, 'accounts/authentication.html', context={'form':form})
+
+    def get(self, request):
+        form = EmailVerificationForm()
+        key = request.session.get('3timewrongverifycode')
+        if key is not None:
+            del request.session['3timewrongverifycode']
+            context = {'form':form, 'special_error':'send another code to your email'}
+        else:
+            context = {'form':form}
+        response = requests.get(
+            url='http://127.0.0.1:8001/accounts/api/emailverification/',
+            headers={'Authorization': str(request.COOKIES.get('Authorization'))}
+        )
+        if response.status_code == 200 and response.json()['response'] == 'exists':
+            return render(request, 'accounts/authentication.html', context)
+        else:
+            return redirect('/')
+
+
+
+
+
+
+
+

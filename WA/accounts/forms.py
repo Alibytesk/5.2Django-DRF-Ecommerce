@@ -77,3 +77,13 @@ class ChangePasswordForm(forms.Form):
     def clean_password1(self):
         password1 = self.cleaned_data.get('password1')
         return PasswordValidation.password_validator(password1=password1)
+    
+
+class EmailVerificationForm(forms.Form):
+    code = forms.CharField(
+        validators=(validators.MaxLengthValidator(6),validators.MinLengthValidator(6),),
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'enter code',
+            'class': 'form-control',
+        })
+    )

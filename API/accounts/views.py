@@ -120,3 +120,66 @@ class ChangePasswordAPIView(APIView):
         else:
             _response = {'response': 'your current password is wrong'}
         return Response(data=_response, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+
+class GenerateEmailVerifyCodeAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_email_verify:
+            EmailVerifyCode.clean_code()
+            _object = EmailVerifyCode.objects.filter(user=request.user)
+            if _object.exists():
+                _object.first().delete()
+            code = rnd(111111, 999999)
+            EmailVerifyCode.objects.create(user=request.user, code=code, counter=0).save()
+            return Response(data={
+                'response': 'send code successfully',
+                'code': code,
+                'username': request.user.username,
+                'email': request.user.email
+            }, status=status.HTTP_200_OK)
+        else:
+            _response = {'response': 'this email is already verified'}
+        return Response(data=_response, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+
+class EmailVerificationAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        EmailVerifyCode.clean_code()
+
+        if not request.user.is_email_verify:
+            data = request.data
+            _object = EmailVerifyCode.objects.filter(Q(user=request.user) & Q(code=data['code']))
+            if _object.exists():
+                request.user.is_email_verify = True
+                request.user.save()
+                _object.first().delete()
+                return Response(data={'response': 'successfully verified'}, status=status.HTTP_200_OK)
+            else:
+                _response = {'response': 'invalid_code'}
+            return Response(data=_response, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response(data={'response': 'not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request):
+        EmailVerifyCode.clean_code()
+
+        if EmailVerifyCode.objects.filter(user=request.user).exists():
+            return Response(data={'response': 'exists'}, status=status.HTTP_200_OK)
+        return Response(data={'response': 'not-exists'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+
+
+
+
+
+
+
+
+
+

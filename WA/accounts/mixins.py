@@ -32,7 +32,9 @@ class LoginRequiredMixin:
                 return super().dispatch(request, *args, **kwargs)
             response = requests.post(
                 url='http://127.0.0.1:8001/accounts/api/check_authenticate/',
-                headers=token
+                headers=dict({
+                    'Authorization': token
+                })
             )
             if response.json()['response'] == 'is_Authenticated' and response.status_code == 200:
                 cache.set(key=token_key, value=True, timeout=300)
