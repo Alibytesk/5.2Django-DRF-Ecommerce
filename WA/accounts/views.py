@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect
 from django.views.generic.base import View
 from django.db.models import Q
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.urls import reverse
 from django.contrib import messages
@@ -9,6 +10,7 @@ from django.contrib import messages
 from .mixins import AnonymousMixin, LoginRequiredMixin
 from .forms import *
 
+import hashlib
 import requests
 
 class LoginView(AnonymousMixin, View):
@@ -159,3 +161,24 @@ class ChangePasswordView(LoginRequiredMixin, View):
         return render(request, 'accounts/authentication.html', context={
             'form': form
         })
+
+
+class LogoutView(View):
+
+    def logout_user(self, request):
+        token = request.COOKIES.get('Authorization')
+        if token:
+            token_key = f'user_auth_token_{hashlib.md5(token.encode()).hexdigest()}'
+            if cache.get(token_key):
+                cache.delete(token_key)
+            red = redirect('/')
+            red.delete_cookie('Authorization')
+            return red
+        return redirect('accounts:login')
+    
+    def post(self, request):
+        return self.logout_user(request)
+    
+    def get(self, request):
+        return self.logout_user(request)
+    
