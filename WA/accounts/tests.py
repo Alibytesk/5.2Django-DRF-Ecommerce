@@ -1,10 +1,12 @@
 # accounts/tests.py
-from django.test import TestCase, Client
+from django.test import TestCase, Client, RequestFactory
 from django.urls import reverse
 from django.contrib.messages import get_messages
 from unittest.mock import patch, Mock
 from accounts.forms import OtpcheckForm
 from .decorators_tests import *
+from django.contrib.messages.storage.fallback import FallbackStorage
+from accounts.views import GenerateEmailVerifyCodeView
 
 
 class LoginViewTests(TestCase):
@@ -259,3 +261,38 @@ class ChangePasswordViewTests(TestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'your current password is wrong')
+
+
+class GenerateEmailVerifyCodeViewTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.url = reverse('accounts:emailverify')
+        self.token = 'testtoken'
+        self.cookie = {'Authorization': self.token}
+
+    @patch('accounts.views.requests.post')
+    @patch('accounts.views.requests.get')
+    @patch('accounts.views.EmailMessage.send')
+    def test_successful_email_verification(self, mock_send, mock_get, mock_post):
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            'response': 'is_Authenticated'
+        }
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            'username': 'testuser',
+            'code': '123456',
+            'email': 'user@example.com'
+        }
+
+        request = self.factory.get(self.url)
+        request.COOKIES = self.cookie
+        setattr(request, 'session', self.client.session)
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        response = GenerateEmailVerifyCodeView.as_view()(request)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('accounts:emailverification'))
+        mock_send.assert_called_once()
+        mock_get.assert_called_once()
+        mock_post.assert_called_once()

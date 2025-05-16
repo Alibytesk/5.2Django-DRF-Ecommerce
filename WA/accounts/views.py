@@ -182,7 +182,6 @@ class GenerateEmailVerifyCodeView(LoginRequiredMixin, View):
                 'Authorization': str(request.COOKIES.get('Authorization')),
             }),
         )
-        print('check1'*100)
         if response.status_code == 200:
             EmailMessage(
                 subject='Email Verification',
@@ -246,11 +245,5 @@ class EmailVerificationView(LoginRequiredMixin, View):
             return render(request, 'accounts/authentication.html', context)
         else:
             return redirect('/')
-
-
-
-
-
-
-
+        
 
