@@ -2,10 +2,11 @@ from rest_framework import status
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
-from .models import Otp
+from .models import Otp, EmailVerifyCode
 from time import time
 from .decorators_test import *
 from functools import cache
+from unittest.mock import patch
 
 
 class LoginAPIViewTest(APITestCase):
@@ -202,3 +203,85 @@ class ChangePasswordAPIViewTest(APITestCase):
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
         self.assertEqual(response.data['response'], 'new password can not be your current password')
+
+
+class GenerateEmailVerifyCodeAPIViewTest(APITestCase):
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            phone='09000000000',
+            username='Gorge Marting',
+            email='martin@gmail.com',
+            password='GMarting12345!@#$%',
+            is_email_verify=False,
+        )
+        self.url = reverse('accounts:generate-email-code')
+
+    @patch('accounts.views.EmailVerifyCode.clean_code')
+    @jwt_token
+    def test_generate_email_verify_code_success(self, mock_clean_code):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['response'], 'send code successfully')
+        self.assertEqual(str(response.data['code']).isdigit(), True)
+        self.assertEqual(response.data['username'], self.user.username)
+        self.assertEqual(response.data['email'], self.user.email)
+        mock_clean_code.assert_called_once()
+
+    @jwt_token
+    def test_generate_email_verify_code_already_verified(self):
+        self.user.is_email_verify = True
+        self.user.save()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+        self.assertEqual(response.data['response'], 'this email is already verified')
+
+
+class EmailVerificationAPIViewTest(APITestCase):
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            phone='09000000000',
+            username='Gorge Marting',
+            email='martin@gmail.com',
+            password='GMarting12345!@#$%',
+            is_email_verify=False,
+        )
+        self.data = EmailVerifyCode.objects.create(
+            user=self.user,
+            code=111111,
+            counter=0,
+        )
+        self.url = reverse('accounts:emailverification')
+
+    @jwt_token
+    def test_email_verification_success(self):
+        data = {
+            'code' : 111111,
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.data['response'], 'successfully verified')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @jwt_token
+    def test_email_verification_wrong_code(self):
+        data = {
+            'code': 000000,
+        }
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+        self.assertEqual(response.data['response'], 'invalid_code')
+
+    @jwt_token
+    def test_email_verification_already_verified(self):
+        self.user.is_email_verify = True
+        self.user.save()
+        data = {'code': 111111}
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['response'], 'not found')
+
+
+
+
+
