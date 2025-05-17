@@ -247,3 +247,30 @@ class EmailVerificationView(LoginRequiredMixin, View):
             return redirect('/')
         
 
+class EmailQueueAuthView(AnonymousMixin, View):
+
+    def post(self, request):
+        form = EmailQueueAuthForm(data=request.POST)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+            response = requests.post(
+                url='',
+                json={
+                    'email': cleaned_data.get('email'),
+                    'domain': get_current_site(request),
+                }
+            )
+            _message = response.json()['response']
+            if response.status_code == 200 and _message == 'successfully send link to email' :
+                messages.success(request, 'link successfully send to your email')
+                return redirect('accounts:login')
+            elif response.status_code == 404 and _message == 'this email is not exists':
+                form.add_error('email', _message)
+            elif response.status_code == 406 and _message == 'this email is not Authenticated':
+                form.add_error('email', _message + ', try with your Phone Number')
+        return render(request, 'accounts/authentication.html', context={'form': form})
+    
+    def get(self, request):
+        form = EmailQueueAuthForm()
+        return render(request, 'accounts/authentication.html', context={'form': form})
+

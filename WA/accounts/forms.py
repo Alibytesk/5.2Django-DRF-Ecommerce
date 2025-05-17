@@ -87,3 +87,11 @@ class EmailVerificationForm(forms.Form):
             'class': 'form-control',
         })
     )
+
+
+class EmailQueueAuthForm(forms.Form):
+    email = forms.CharField(
+        validators=(validators.EmailValidator,),
+        widget=forms.EmailInput(attrs={'placeholder':'Your Email', 'class': 'form-control'}),
+        max_length=255,
+    )

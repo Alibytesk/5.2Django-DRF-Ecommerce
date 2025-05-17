@@ -1,0 +1,14 @@
+{% load static %}
+{% if 'login' in request.resolver_match.url_name %}
+    {{request.resolver_match.url_name|title}}
+{% elif 'register' in request.resolver_match.url_name %}
+    {{request.resolver_match.url_name|title}}
+{% elif 'create-account' in request.resolver_match.url_name %}
+    Create Account
+{% elif 'change-password' in request.resolver_match.url_name %}
+    Change Password
+{% elif 'emailverification' in request.resolver_match.url_name %}
+    Email Verification
+{% elif 'emailqueueauth' in request.resolver_match.url_name %}
+    Reset Password
+{% endif %}

@@ -174,7 +174,35 @@ class EmailVerificationAPIView(APIView):
         return Response(data={'response': 'not-exists'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
+class EmailQueueAuthAPIView(APIView):
 
+    def post(self, request):
+        email = request.data['email']
+        _object = User.objects.filter(email=email)
+        if _object.exists():
+            _object = _object.first()
+            if _object.is_email_verify:
+                EmailMessage(
+                    subject='Reset Password',
+                    body=render_to_string(
+                        template_name='accounts/accounts.html',
+                        context={
+                            'username': _object.username,
+                            'domain': request.data['domain'],
+                            'uid': urlsafe_base64_encode(force_bytes(_object.pk)),
+                            'token': default_token_generator.make_token(_object)
+                        }
+                    ),
+                    to=[email]
+                ).send()
+                return Response(data={'response': 'successfully send link to email'}, status=status.HTTP_200_OK)
+            else:
+                _response = {'response': 'this email is not Authenticated'}
+                s_code = status.HTTP_406_NOT_ACCEPTABLE
+        else:
+            _response = {'response': 'this email is not exists'}
+            s_code = status.HTTP_404_NOT_FOUND
+        return Response(data=_response, status=s_code)
 
 
 

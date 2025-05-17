@@ -1,33 +1,13 @@
 {% extends "base/base.html" %}
 {% load static %}
 {% block title %}
-{% if request.resolver_match.url_name == 'login' %}
-{{request.resolver_match.url_name|title}}
-{% elif request.resolver_match.url_name == 'register' %}
-{{request.resolver_match.url_name|title}}
-{% elif request.resolver_match.url_name == 'create-account' %}
-Create Account
-{% elif request.resolver_match.url_name == 'change-password' %}
-Change Password
-{% elif request.resolver_match.url_name == 'emailverification' %}
-Email Verification
-{% endif %}
+{% include 'includes/title_references.html' %}
 {% endblock %}
 {% block content %}
     <!-- authentication start -->
     <div class="container-fluid">
         <h2 class="section-title position-relative text-uppercase text-center mx-xl-5 mb-4"><span class="bg-secondary pr-3">
-            {% if request.resolver_match.url_name == 'login' %}
-            {{request.resolver_match.url_name|title}}
-            {% elif request.resolver_match.url_name == 'register' %}
-            {{request.resolver_match.url_name|title}}
-            {% elif request.resolver_match.url_name == 'create-account' %}
-            Create Account
-            {% elif request.resolver_match.url_name == 'change-password' %}
-            Change Password
-            {% elif request.resolver_match.url_name == 'emailverification' %}
-            Email Verification
-            {% endif %}
+            {% include 'includes/title_references.html' %}
         </span></h2>
         <div class=" px-xl-5">
             <div class=" mb-5 contact-us" style="">
@@ -47,17 +27,7 @@ Email Verification
                         {% endfor %}
                         <div>
                             <button class="btn btn-primary py-2 px-4" type="submit" id="sendMessageButton">
-                                {% if request.resolver_match.url_name == 'login' %}
-                                {{request.resolver_match.url_name|lower}}
-                                {% elif request.resolver_match.url_name == 'register' %}
-                                {{request.resolver_match.url_name|title}}
-                                {% elif request.resolver_match.url_name == 'create-account' %}
-                                Create Account
-                                {% elif request.resolver_match.url_name == 'change-password' %}
-                                change
-                                {% elif request.resolver_match.url_name == 'emailverification' %}
-                                verify
-                                {% endif %}
+                                {% include 'includes/button_name.html' %}
                             </button>
                         </div>
                     </form>
