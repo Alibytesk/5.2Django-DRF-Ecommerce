@@ -208,20 +208,31 @@ class EmailQueueAuthAPIView(APIView):
 
 class EmailResetPasswordAPIView(APIView):
 
-    def post(self, request, uid, token):
+    def post(self, request):
         try:
-            u_id = urlsafe_base64_decode(uid).decode()
+            data = request.data
+            u_id = urlsafe_base64_decode(data['uid']).decode()
             user = User.objects.get(pk=u_id)
         except(User.DoesNotExist, ValueError, TypeError, OverflowError):
             user = None
-        if user and default_token_generator.check_token(user, token):
+        if user and default_token_generator.check_token(user, data['token']):
             return Response(data={'response': 'isOK', 'u_id': u_id}, status=status.HTTP_200_OK)
         else:
             return Response(data={'response': 'this link has expired'},
                             status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
+class SetPasswordAPIView(APIView):
 
-
-
-
+    def post(self, request):
+        password = request.data['password']
+        uid = request.data['uid']
+        _user = User.objects.filter(pk=uid)
+        if _user.exists():
+            user = _user.first()
+            user.set_password(password)
+            user.save()
+            return Response(data={'response': 'successfully reset password'},
+                            status=status.HTTP_200_OK)
+        else:
+            return Response(data={'response': 'invalid request'}, status=status.HTTP_406_NOT_ACCEPTABLE)

@@ -12,5 +12,6 @@ urlpatterns = [
     path('api/generate-email-code/', GenerateEmailVerifyCodeAPIView.as_view(), name='generate-email-code'),
     path('api/emailverification/', EmailVerificationAPIView.as_view(), name='emailverification'),
     path('api/emailqueueauth/', EmailQueueAuthAPIView.as_view(), name='emailqueueauth'),
-    path('api/emailresetpassword/<str:uid>}/<str:token>', EmailResetPasswordAPIView.as_view(), name='emailresetpassword'),
+    path('api/emailresetpassword/', EmailResetPasswordAPIView.as_view(), name='emailresetpassword'),
+    path('api/setpassword/', SetPasswordAPIView.as_view(), name='setpassword')
 ]

@@ -257,8 +257,8 @@ class EmailQueueAuthView(AnonymousMixin, View):
                 url='http://127.0.0.1:8001/accounts/api/emailqueueauth/',
                 json={
                     'email': cleaned_data.get('email'),
-                    'domain': get_current_site(request),
-                    'url': reverse('accounts:emailresetpassword'),
+                    'domain': str(get_current_site(request)),
+                    'url': str('/accounts/emailresetpassword/'),
                 }
             )
             _message = response.json()['response']
@@ -280,14 +280,49 @@ class EmailResetPasswordView(AnonymousMixin, View):
 
     def get(self, request, uid, token):
         response = requests.post(
-            url=f'http://127.0.0.1:8001/accounts/api/emailresetpassword/{uid}/{token}'
+            url=f'http://127.0.0.1:8001/accounts/api/emailresetpassword/',
+            json={'uid':uid, 'token':token}
         )
         action = response.json()
         if response.status_code == 200 and action['response'] == 'isOK':
-            request.session['uid'] = action['u_id']
-            return redirect('accounts:None')
+            cache.set('uid', action['u_id'], timeout=300)
+            return redirect('accounts:setpassword')
         elif response.status_code == 406 and action['response'] == 'this link has expired':
             messages.success(request, action['response'])
             return redirect('accounts:emailqueueauth')
 
 
+class SetPasswordView(AnonymousMixin, View):
+
+    def get(self, request):
+        if cache.get('uid'):
+            form = SetPasswordForm()
+            return render(request, 'accounts/authentication.html', context={'form':form})
+        else:
+            return redirect('accounts:login')
+        
+    def post(self, request):
+        if cache.get('uid'):
+            form = SetPasswordForm(data=request.POST)
+            if form.is_valid():
+                cleaned_data = form.cleaned_data
+                if cleaned_data['password1'] == cleaned_data['password2']:
+                    response = requests.post(
+                        url='http://127.0.0.1:8001/accounts/api/setpassword/',
+                        json={
+                            'password': cleaned_data['password1'],
+                            'uid': cache.get('uid')
+                        }
+                    )
+                    _message = response.json()
+                    if response.status_code == 200 and _message['response'] == 'successfully reset password':
+                        cache.delete('uid')
+                        messages.success(request, _message['response'])
+                        return redirect('accounts:login')
+                    elif response.status_code == 406 and _message['response'] == 'invalid request':
+                        return redirect('accounts:login')
+                else:
+                    form.add_error('password2', 'password do not match')
+            return render(request, 'accounts/authentication.html', context={'form':form})
+        else:
+            return redirect('accounts:login')

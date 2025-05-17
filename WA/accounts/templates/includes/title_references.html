@@ -11,4 +11,6 @@
     Email Verification
 {% elif 'emailqueueauth' in request.resolver_match.url_name %}
     Reset Password
+{% elif 'setpassword' in request.resolver_match.url_name %}
+    Set Password
 {% endif %}

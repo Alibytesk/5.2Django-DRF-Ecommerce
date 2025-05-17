@@ -95,3 +95,23 @@ class EmailQueueAuthForm(forms.Form):
         widget=forms.EmailInput(attrs={'placeholder':'Your Email', 'class': 'form-control'}),
         max_length=255,
     )
+
+
+class SetPasswordForm(forms.Form):
+
+    password1 = forms.CharField(
+    widget=forms.PasswordInput(attrs={
+        'placeholder': 'new password',
+        'class': 'form-control',
+    })
+)
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'confirmation password',
+            'class': 'form-control',
+        })
+    )
+
+    def clean_password1(self):
+        password1 = self.cleaned_data.get('password1')
+        return PasswordValidation.password_validator(password1=password1)

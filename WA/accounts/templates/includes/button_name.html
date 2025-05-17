@@ -11,4 +11,6 @@
     verify
 {% elif 'emailqueueauth' in request.resolver_match.url_name %}
     send
+{% elif 'setpassword' in request.resolver_match.url_name %}
+    confirm
 {% endif %}

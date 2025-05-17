@@ -12,5 +12,7 @@ urlpatterns = [
     path('emailverify/', GenerateEmailVerifyCodeView.as_view(), name='emailverify'),
     path('emailverification/', EmailVerificationView.as_view(), name='emailverification'),
     path('emailqueueauth/', EmailQueueAuthView.as_view(), name='emailqueueauth'),
+    path('emailresetpassword/<str:uid>/<str:token>', EmailResetPasswordView.as_view(), name='emailresetpassword'),
+    path('setpassword/', SetPasswordView.as_view(), name='setpassword'),
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
