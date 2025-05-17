@@ -189,6 +189,7 @@ class EmailQueueAuthAPIView(APIView):
                         context={
                             'username': _object.username,
                             'domain': request.data['domain'],
+                            'url': request.data['url'],
                             'uid': urlsafe_base64_encode(force_bytes(_object.pk)),
                             'token': default_token_generator.make_token(_object)
                         }
@@ -205,6 +206,19 @@ class EmailQueueAuthAPIView(APIView):
         return Response(data=_response, status=s_code)
 
 
+class EmailResetPasswordAPIView(APIView):
+
+    def post(self, request, uid, token):
+        try:
+            u_id = urlsafe_base64_decode(uid).decode()
+            user = User.objects.get(pk=u_id)
+        except(User.DoesNotExist, ValueError, TypeError, OverflowError):
+            user = None
+        if user and default_token_generator.check_token(user, token):
+            return Response(data={'response': 'isOK', 'u_id': u_id}, status=status.HTTP_200_OK)
+        else:
+            return Response(data={'response': 'this link has expired'},
+                            status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
 

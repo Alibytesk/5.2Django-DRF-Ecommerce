@@ -10,5 +10,7 @@ urlpatterns = [
     path('api/check_otp_access/', CheckOtpTokenAPIView.as_view(), name='check_otp_access'),
     path('api/change-password/', ChangePasswordAPIView.as_view(), name='change-password'),
     path('api/generate-email-code/', GenerateEmailVerifyCodeAPIView.as_view(), name='generate-email-code'),
-    path('api/emailverification/', EmailVerificationAPIView.as_view(), name='emailverification')
+    path('api/emailverification/', EmailVerificationAPIView.as_view(), name='emailverification'),
+    path('api/emailqueueauth/', EmailQueueAuthAPIView.as_view(), name='emailqueueauth'),
+    path('api/emailresetpassword/<str:uid>}/<str:token>', EmailResetPasswordAPIView.as_view(), name='emailresetpassword'),
 ]

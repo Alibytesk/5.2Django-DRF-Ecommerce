@@ -254,10 +254,11 @@ class EmailQueueAuthView(AnonymousMixin, View):
         if form.is_valid():
             cleaned_data = form.cleaned_data
             response = requests.post(
-                url='',
+                url='http://127.0.0.1:8001/accounts/api/emailqueueauth/',
                 json={
                     'email': cleaned_data.get('email'),
                     'domain': get_current_site(request),
+                    'url': reverse('accounts:emailresetpassword'),
                 }
             )
             _message = response.json()['response']
@@ -273,4 +274,20 @@ class EmailQueueAuthView(AnonymousMixin, View):
     def get(self, request):
         form = EmailQueueAuthForm()
         return render(request, 'accounts/authentication.html', context={'form': form})
+
+
+class EmailResetPasswordView(AnonymousMixin, View):
+
+    def get(self, request, uid, token):
+        response = requests.post(
+            url=f'http://127.0.0.1:8001/accounts/api/emailresetpassword/{uid}/{token}'
+        )
+        action = response.json()
+        if response.status_code == 200 and action['response'] == 'isOK':
+            request.session['uid'] = action['u_id']
+            return redirect('accounts:None')
+        elif response.status_code == 406 and action['response'] == 'this link has expired':
+            messages.success(request, action['response'])
+            return redirect('accounts:emailqueueauth')
+
 

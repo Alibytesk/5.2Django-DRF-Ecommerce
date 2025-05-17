@@ -1,7 +1,7 @@
 {% autoescape off %}
 hello dear '{{ username }}'
     As requested, code for email verification.
-    http://{{ domain }}{% url 'accounts:resetpassword' uidb64=uid token=token %}
+    http://{{domain}}{{url}}{{uid}}/{{token}}
 
     If you think it's not you, please ignore this email.
 
